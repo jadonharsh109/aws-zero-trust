@@ -21,11 +21,6 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Ignore Terraform variable files (often contain secrets)
-*.auto.tfvars
-*.auto.tfvars.json
-*.tfvars
-
 # Ignore sensitive output logs
 output.log
 plan.out
