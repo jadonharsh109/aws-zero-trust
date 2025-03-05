@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: ingress-nginx
+spec:
+  type: ExternalName
+  externalName: auth-service.auth-ns.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checklist-service
+  namespace: ingress-nginx
+spec:
+  type: ExternalName
+  externalName: checklist-service.checklist-ns.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kanbanboard-service
+  namespace: ingress-nginx
+spec:
+  type: ExternalName
+  externalName: kanbanboard-service.kanbanboard-ns.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pomodoro-service
+  namespace: ingress-nginx
+spec:
+  type: ExternalName
+  externalName: pomodoro-service.pomodoro-ns.svc.cluster.local
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: timeshashaan-nginx
+  namespace: ingress-nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: "/auth/(.*)"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 5001
+          - path: "/checklist/(.*)"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: checklist-service
+                port:
+                  number: 5002
+          - path: "/kanbanboard/(.*)"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: kanbanboard-service
+                port:
+                  number: 5003
+          - path: "/pomodoro/(.*)"
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: pomodoro-service
+                port:
+                  number: 5004
+

@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notify-deployment
+  namespace: notify-ns
+  labels:
+    app: notify
+spec:
+  selector:
+    matchLabels:
+      app: notify
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: notify
+    spec:
+      initContainers:
+        - name: check-kafka
+          image: busybox
+          command:
+          - sh
+          - -c
+          - |
+            until nc -zv kafka-service.kafka-ns.svc.cluster.local 9092; do
+              echo "Waiting for Kafka to be ready..."
+              sleep 2
+            done
+      containers:
+      - name: notify-container
+        image: kka01/timeshaasan-notify:latest
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+          limits:
+            cpu: 250m
+            memory: 200Mi
+        livenessProbe:
+          tcpSocket:
+            port: 5005
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /working
+            port: 5005
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        ports:
+        - containerPort: 5005
+          name: notify-port
+        env:
+        - name: HOST_NAME
+          valueFrom:
+            secretKeyRef:
+              name: notify-secrets
+              key: smtp_hostname
+        - name: USER_Name
+          valueFrom:
+            secretKeyRef:
+              name: notify-secrets
+              key: smtp_username
+        - name: EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: notify-secrets
+              key: smtp_email
+        - name: PASS
+          valueFrom:
+            secretKeyRef:
+              name: notify-secrets
+              key: smtp_password
+        - name:  KAFKA_BROKER
+          value: "kafka-service.kafka-ns.svc.cluster.local:9092"
+
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notify-secrets
+  namespace: notify-ns
+type: Opaque
+data:
+
+  smtp_hostname: c210cC5tYWlsZ3VuLm9yZw==
+  smtp_username: VGltZVNoYWFzYW4=
+  smtp_email: dGltZXNoYWFzYW4tbm9yZXBseUBxdWFudGdhbS5jb20K
+  smtp_password: OGZiYjBlOTYxOGIyOWI3NmViNDJiZWEwOTQxYTVlNjktN2EzYWY0NDItMDlhYWY3NDk=
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: notify-service
+  namespace: notify-ns
+spec:
+  selector:
+    app: notify
+  ports:
+  - name: notify-port
+    protocol: TCP
+    port: 5005
+    targetPort: 5005

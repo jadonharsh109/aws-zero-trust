@@ -1,0 +1,159 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: checklist-statefulset
+  namespace: checklist-ns
+  labels:
+    app: checklist-db
+spec:
+  selector:
+    matchLabels:
+      app: checklist-db
+  serviceName: checklist-db-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: checklist-db
+    spec:
+      containers:
+      - name: checklist-db-container
+        image: mongo:latest
+        resources:
+          requests:
+            cpu: 200m
+            memory: 200Mi
+          limits:
+            cpu: 400m
+            memory: 400Mi
+        livenessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - db.adminCommand('ping')
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        ports:
+        - containerPort: 27017
+          name: checklisdb-port
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: checklist-db-service
+  namespace: checklist-ns
+spec:
+  selector:
+    app: checklist-db
+  clusterIP: None
+  ports:
+  - name: checklisdb-port
+    protocol: TCP
+    port: 27017
+    targetPort: 27017
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checklist-deployment
+  namespace: checklist-ns
+  labels:
+    app: checklist
+spec:
+  selector:
+    matchLabels:
+      app: checklist
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: checklist
+    spec:
+      initContainers:
+        - name: check-mongo
+          image: busybox
+          command: ['sh','-c', 'until nslookup checklist-db-service.checklist-ns.svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
+        - name: check-kafka
+          image: busybox
+          command:
+          - sh
+          - -c
+          - |
+            until nc -zv kafka-service.kafka-ns.svc.cluster.local 9092; do
+              echo "Waiting for Kafka to be ready..."
+              sleep 2
+            done
+      containers:
+      - name: checklist-container
+        image: kka01/timeshaasan-checklist:latest
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+          limits:
+            cpu: 250m
+            memory: 200Mi
+        livenessProbe:
+          tcpSocket:
+            port: 5002
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /working
+            port: 5002
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: DB_URI
+          value: mongodb://checklist-db-service.checklist-ns.svc.cluster.local:27017
+        - name: KAFKA_BROKER
+          value: "kafka-service.kafka-ns.svc.cluster.local:9092"
+        ports:
+        - containerPort: 5002
+          name: checklist-port
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: checklist-service
+  namespace: checklist-ns
+spec:
+  selector:
+    app: checklist
+  ports:
+  - name: checklist-port
+    protocol: TCP
+    port: 5002
+    targetPort: 5002

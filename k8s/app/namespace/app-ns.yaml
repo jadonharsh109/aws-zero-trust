@@ -1,0 +1,41 @@
+---
+# namespace required for auth microservice
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth-ns
+
+---
+# namespace required for checklist microservice
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: checklist-ns
+
+---
+# namespace required for pomodoro microservice
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pomodoro-ns
+
+---
+# namespace required for notify microservice
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: notify-ns
+
+---
+# namespace required for kanbanboard microservice
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kanbanboard-ns
+
+---
+# namespace required for kafka microservice
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka-ns

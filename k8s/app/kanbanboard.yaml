@@ -1,0 +1,159 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name:  kanbanboard-statefulset
+  namespace: kanbanboard-ns
+  labels:
+    app:  kanbanboard-db
+spec:
+  selector:
+    matchLabels:
+      app:  kanbanboard-db
+  serviceName: kanbanboard-db-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app:  kanbanboard-db
+    spec:
+      containers:
+      - name:  kanbanboard-db-container
+        image:  mongo:latest
+        resources:
+          requests:
+            cpu: 200m
+            memory: 200Mi
+          limits:
+            cpu: 400m
+            memory: 400Mi
+        livenessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - db.adminCommand('ping')
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        ports:
+        - containerPort:  27017
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kanbanboard-db-service
+  namespace: kanbanboard-ns
+spec:
+  selector:
+    app: kanbanboard-db
+  clusterIP: None
+  ports:
+  - name: kanban-db-port
+    protocol: TCP
+    port: 27017
+    targetPort: 27017
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  kanbanboard-deployment
+  namespace: kanbanboard-ns
+  labels:
+    app:  kanbanboard
+spec:
+  selector:
+    matchLabels:
+      app:  kanbanboard
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  kanbanboard
+    spec:
+      initContainers:
+        - name: check-mongo
+          image: busybox
+          command: ['sh','-c', 'until nslookup kanbanboard-db-service.kanbanboard-ns.svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
+
+        - name: check-kafka
+          image: busybox
+          command:
+          - sh
+          - -c
+          - |
+            until nc -zv kafka-service.kafka-ns.svc.cluster.local 9092; do
+              echo "Waiting for Kafka to be ready..."
+              sleep 2
+            done;
+      containers:
+      - name:  kanbanboard-container
+        image:  kka01/timeshaasan-kanbanboard:latest
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+          limits:
+            cpu: 250m
+            memory: 200Mi
+        livenessProbe:
+          tcpSocket:
+            port: 5003
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /working
+            port: 5003
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: DB_URI
+          value: mongodb://kanbanboard-db-service.kanbanboard-ns.svc.cluster.local:27017
+        - name:  KAFKA_BROKER
+          value: "kafka-service.kafka-ns.svc.cluster.local:9092"
+        ports:
+        - containerPort:  5003
+          name:  kanban-port
+      restartPolicy: Always
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kanbanboard-service
+  namespace: kanbanboard-ns
+spec:
+  selector:
+    app: kanbanboard
+  ports:
+  - name: kanban-port
+    protocol: TCP
+    port: 5003
+    targetPort: 5003
