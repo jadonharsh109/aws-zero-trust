@@ -37,8 +37,8 @@ module "iam" {
 
 }
 
-module "local" {
-  source = "../../modules/local"
+module "eks-auth" {
+  source = "../../modules/eks-auth"
 
   readonly_role_arn   = module.iam.readonly_role_arn
   fullaccess_role_arn = module.iam.fullaccess_role_arn
