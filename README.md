@@ -75,6 +75,7 @@ The project implements a layered security approach:
 - AWS CLI (for cloud deployment)
 - Docker (for local development)
 - kind (for local k8s cluster)
+- calicoctl (for applying calico policies)
 - Helm >= 3.0.0 (for Kyverno installation)
 
 ### Local Development Setup
