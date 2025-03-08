@@ -1,0 +1,33 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: allow-backend-to-database
+spec:
+  selector: role == 'backend'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      selector: role == 'database'
+      ports:
+      - 27017
+  
+---
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: allow-database-from-backend
+spec:
+  selector: role == 'database'
+  types:
+  - Ingress
+  ingress:
+  - action: Allow
+    protocol: TCP
+    source:
+      selector: role == 'backend'
+    destination:
+      ports:
+      - 27017 

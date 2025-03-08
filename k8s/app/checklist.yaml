@@ -6,6 +6,7 @@ metadata:
   namespace: checklist-ns
   labels:
     app: checklist-db
+    role: database
 spec:
   selector:
     matchLabels:
@@ -16,6 +17,7 @@ spec:
     metadata:
       labels:
         app: checklist-db
+        role: database
     spec:
       containers:
       - name: checklist-db-container
@@ -76,6 +78,7 @@ metadata:
   namespace: checklist-ns
   labels:
     app: checklist
+    role: backend
 spec:
   selector:
     matchLabels:
@@ -90,6 +93,7 @@ spec:
     metadata:
       labels:
         app: checklist
+        role: backend
     spec:
       initContainers:
         - name: check-mongo

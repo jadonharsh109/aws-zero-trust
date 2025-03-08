@@ -6,6 +6,7 @@ metadata:
   namespace: pomodoro-ns
   labels:
     app:  pomodoro-db
+    role: database
 spec:
   selector:
     matchLabels:
@@ -16,6 +17,7 @@ spec:
     metadata:
       labels:
         app:  pomodoro-db
+        role: database
     spec:
       containers:
       - name:  pomodoro-db-container
@@ -76,6 +78,7 @@ metadata:
   namespace: pomodoro-ns
   labels:
     app:  pomodoro
+    role: backend
 spec:
   selector:
     matchLabels:
@@ -90,6 +93,7 @@ spec:
     metadata:
       labels:
         app:  pomodoro
+        role: backend
     spec:
       initContainers:
         - name: check-mongo

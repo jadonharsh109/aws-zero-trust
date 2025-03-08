@@ -6,6 +6,7 @@ metadata:
   namespace: kanbanboard-ns
   labels:
     app:  kanbanboard-db
+    role: database
 spec:
   selector:
     matchLabels:
@@ -16,6 +17,7 @@ spec:
     metadata:
       labels:
         app:  kanbanboard-db
+        role: database
     spec:
       containers:
       - name:  kanbanboard-db-container
@@ -75,6 +77,7 @@ metadata:
   namespace: kanbanboard-ns
   labels:
     app:  kanbanboard
+    role: backend
 spec:
   selector:
     matchLabels:
@@ -89,6 +92,7 @@ spec:
     metadata:
       labels:
         app:  kanbanboard
+        role: backend
     spec:
       initContainers:
         - name: check-mongo

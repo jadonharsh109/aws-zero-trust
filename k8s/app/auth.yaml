@@ -24,6 +24,7 @@ metadata:
   namespace: auth-ns
   labels:
     app: auth-db
+    role: database
 spec:
   selector:
     matchLabels:
@@ -34,6 +35,7 @@ spec:
     metadata:
       labels:
         app: auth-db
+        role: database
     spec:
       containers:
       - name: auth-db-container
@@ -90,6 +92,7 @@ metadata:
   namespace: auth-ns
   labels:
     app: auth
+    role: backend
 spec:
   selector:
     matchLabels:
@@ -99,12 +102,19 @@ spec:
     metadata:
       labels:
         app: auth
+        role: backend
     spec:
       initContainers:
       - name: check-mongo
         image: busybox
-        command: ['sh','-c', 'until nslookup auth-db-service.auth-ns.svc.cluster.local; do echo waiting for auth-db; sleep 2; done;']
-        
+        command:
+        - sh
+        - -c
+        - |
+          until nc -zv auth-db-service.auth-ns.svc.cluster.local 27017; do
+            echo "Waiting for MongoDB to be accessible..."
+            sleep 2
+          done
       - name: check-kafka
         image: busybox
         command:
@@ -145,7 +155,7 @@ spec:
           periodSeconds: 10
         env:
         - name: DB_URI
-          value: mongodb://auth-db-service.auth-ns.svc.cluster.local:27017 
+          value: mongodb://auth-db-service.auth-ns.svc.cluster.local:27017/authdb 
         - name: JWT_EXPIRES_IN
           value: 60d 
         - name: KAFKA_BROKER

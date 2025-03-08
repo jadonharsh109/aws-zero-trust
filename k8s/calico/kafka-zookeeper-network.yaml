@@ -1,0 +1,74 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: allow-kafka-connectivity
+spec:
+  selector: app == 'kafka'
+  types:
+  - Egress
+  - Ingress
+  egress:
+  # Allow connection to Zookeeper
+  - action: Allow
+    protocol: TCP
+    destination:
+      selector: app == 'zookeeper'
+      ports:
+      - 2181
+  # Allow Kafka broker-to-broker communication
+  - action: Allow
+    protocol: TCP
+    destination:
+      selector: app == 'kafka'
+      ports:
+      - 9092
+      - 9093
+  # Allow DNS lookups
+  - action: Allow
+    protocol: UDP
+    destination:
+      selector: k8s-app == 'kube-dns'
+      ports:
+      - 53
+  ingress:
+  # Allow connections to Kafka
+  - action: Allow
+    protocol: TCP
+    destination:
+      ports:
+      - 9092
+      - 9093
+
+---
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: allow-zookeeper-connectivity
+spec:
+  selector: app == 'zookeeper'
+  types:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow connections to Zookeeper
+  - action: Allow
+    protocol: TCP
+    destination:
+      ports:
+      - 2181
+  egress:
+  # Allow Zookeeper to connect to Kafka
+  - action: Allow
+    protocol: TCP
+    destination:
+      selector: app == 'kafka'
+      ports:
+      - 9092
+      - 9093
+  # Allow DNS lookups
+  - action: Allow
+    protocol: UDP
+    destination:
+      selector: k8s-app == 'kube-dns'
+      ports:
+      - 53

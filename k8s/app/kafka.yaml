@@ -23,10 +23,10 @@ spec:
           resources:
             requests:
               cpu: 100m     
-              memory: 50Mi  
+              memory: 150Mi  # Increased from 50Mi
             limits:
               cpu: 250m      
-              memory: 200Mi 
+              memory: 500Mi  # Increased from 200Mi
           livenessProbe:
             exec:
               command:
@@ -97,7 +97,7 @@ spec:
             periodSeconds: 30     
           env:
             - name: KAFKA_ADVERTISED_LISTENERS
-              value: "INSIDE://kafka-service:9092,OUTSIDE://kafka-service:9093" # Advertised listeners
+              value: "INSIDE://kafka-service.kafka-ns.svc.cluster.local:9092,OUTSIDE://kafka-service.kafka-ns.svc.cluster.local:9093" # Advertised listeners
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
               value: "INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT"
             - name: KAFKA_LISTENERS

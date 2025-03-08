@@ -1,0 +1,52 @@
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: allow-backend-to-kafka
+spec:
+  selector: role == 'backend'
+  types:
+  - Egress
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      selector: app == 'kafka'
+      ports:
+      - 9092
+      - 9093
+  ingress:
+  - action: Allow
+    protocol: TCP
+    source:
+      selector: app == 'kafka'
+    destination:
+      ports:
+      - 9092
+      - 9093
+
+---
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: allow-kafka-to-backend
+spec:
+  selector: app == 'kafka'
+  types:
+  - Ingress
+  ingress:
+  - action: Allow
+    protocol: TCP
+    source:
+      selector: role == 'backend'
+    destination:
+      ports:
+      - 9092
+      - 9093
+  egress:
+  - action: Allow
+    protocol: TCP
+    destination:
+      selector: role == 'backend'
+      ports:
+      - 9092
+      - 9093
