@@ -74,6 +74,7 @@ The project implements a layered security approach:
 - kubectl >= 1.22
 - AWS CLI (for cloud deployment)
 - Docker (for local development)
+- kind (for local k8s cluster)
 - Helm >= 3.0.0 (for Kyverno installation)
 
 ### Local Development Setup
@@ -87,9 +88,6 @@ cd aws-zero-trust
 cd iac/environments/local
 terraform init
 terraform apply
-
-# Configure kubectl
-export KUBECONFIG=$(terraform output -raw kubeconfig_path)
 
 # Install Calico for network policies
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml
@@ -121,7 +119,6 @@ aws configure
 cd iac/environments/dev
 terraform init
 terraform apply
-
 
 # Install Calico for network policies
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.29.2/manifests/calico.yaml
